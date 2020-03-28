@@ -51,17 +51,40 @@ object MoveValidator {
     fun checkBoardPositionValid(boardpos: Int, state: State) = finished(state.s[boardpos*2]  or state.s[boardpos*2 + 1]).not()
 
 
-    // TODO: Implement check for higher count of achieved wins
     fun won(state: State): Winner {
         return when {
             finished(state.s[18]) -> Winner.ONE
             finished(state.s[19]) -> Winner.TWO
-            (state.s[18] or state.s[19] or state.s[22]) == 0b111111111 -> Winner.FULL
+            (state.s[18] or state.s[19] or state.s[22]) == 0b111111111 ->
+            {
+                val one = countBits(state.s[18])
+                val two = countBits(state.s[19])
+                when {
+                    one > two -> Winner.ONE
+                    two > one -> Winner.TWO
+                    else -> Winner.FULL
+                }
+            }
             else -> Winner.NONE
         }
 
     }
 
+}
+
+
+fun countBits(inNumber: Int): Int {
+    var number = inNumber
+    if (number == 0) {
+        return number
+    }
+
+    var count = 0
+    while (number != 0) {
+        number = number and number - 1
+        count++
+    }
+    return count
 }
 
 enum class Winner {

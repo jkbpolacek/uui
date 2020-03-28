@@ -4,12 +4,12 @@ import kotlin.system.measureTimeMillis
 class GameTests {
     @Test
     fun `Board moves 1`() {
-        var state = BoardImpl.startingState()
+        var state = startingState()
         var movesCount = 0
         while (MoveValidator.won(state) == Winner.NONE) {
-            val move = BoardImpl.randomMove(state)
+            val move = randomMove(state)
 
-            state = BoardImpl.playMove(move!!, state)
+            state = playMove(move!!, state)
             movesCount += 1
         }
 
@@ -24,10 +24,10 @@ class GameTests {
         var movesCount = 0
         val time = measureTimeMillis {
 
-            var state = BoardImpl.startingState()
+            var state = startingState()
             while (MoveValidator.won(state) == Winner.NONE) {
-                val move = BoardImpl.randomMove(state)
-                state = BoardImpl.playMove(move!!, state)
+                val move = randomMove(state)
+                state = playMove(move!!, state)
                 movesCount += 1
             }
         }
@@ -43,15 +43,15 @@ class GameTests {
         val time = measureTimeMillis {
 
             for (i in 0..999) {
-                var state = BoardImpl.startingState()
+                var state = startingState()
                 while (MoveValidator.won(state) == Winner.NONE) {
-                    val move = BoardImpl.randomMove(state)
+                    val move = randomMove(state)
                     if (move == null) {
                         println(movesCount)
                         println(state)
                     }
 
-                    state = BoardImpl.playMove(move!!, state)
+                    state = playMove(move!!, state)
                     movesCount += 1
                 }
                 movesCount = 0
@@ -68,10 +68,10 @@ class GameTests {
         val time = measureTimeMillis {
 
             for (i in 0..9999) {
-                var state = BoardImpl.startingState()
+                var state = startingState()
                 while (MoveValidator.won(state) == Winner.NONE) {
-                    val move = BoardImpl.randomMove(state)
-                    state = BoardImpl.playMove(move!!, state)
+                    val move = randomMove(state)
+                    state = playMove(move!!, state)
                 }
             }
         }
@@ -80,17 +80,16 @@ class GameTests {
     }
 
 
-
     @Test
     fun `Measure 100000 game plays`() {
 
         val time = measureTimeMillis {
 
             for (i in 0..99999) {
-                var state = BoardImpl.startingState()
+                var state = startingState()
                 while (MoveValidator.won(state) == Winner.NONE) {
-                    val move = BoardImpl.randomMove(state)
-                    state = BoardImpl.playMove(move!!, state)
+                    val move = randomMove(state)
+                    state = playMove(move!!, state)
                 }
             }
         }
@@ -106,18 +105,17 @@ class GameTests {
         val time = measureTimeMillis {
 
             for (i in 0..9999) {
-                var state = BoardImpl.startingState()
+                var state = startingState()
                 while (MoveValidator.won(state) == Winner.NONE) {
-                    val move = BoardImpl.randomMove(state)
-                    state = BoardImpl.playMove(move!!, state)
+                    val move = randomMove(state)
+                    state = playMove(move!!, state)
                     movesCount += 1
                 }
             }
         }
 
-        println("Moves ${movesCount/10000}")
+        println("Moves ${movesCount / 10000}")
     }
-
 
 
     @Test
@@ -128,10 +126,10 @@ class GameTests {
 
             for (i in 0..999999) {
                 var movesCount = 0
-                var state = BoardImpl.startingState()
+                var state = startingState()
                 while (MoveValidator.won(state) == Winner.NONE) {
-                    val move = BoardImpl.randomMove(state)
-                    state = BoardImpl.playMove(move!!, state)
+                    val move = randomMove(state)
+                    state = playMove(move!!, state)
                     movesCount += 1
                 }
 

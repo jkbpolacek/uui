@@ -9,7 +9,7 @@ class Node(val state: State, var parent: Node?, var move: Move?) {
     lateinit var children: List<Node>
     var visits: Int = 0
     var wins: Int = 0
-    fun getPlayer(): Int = state.s[21]
+    fun getPlayer(): Int = getPlayer(state)
     fun getRandomChild(): Node? = children[random.nextInt(children.size)]
     fun getChildByMove(move: Move) = children.firstOrNull { it.move!!.equals(move) }
 
@@ -21,12 +21,12 @@ class Tree(var root: Node)
 // UCT = Upper Confidence Bound 1 applied to trees
 fun uctValue(totalVisit: Int, nodeWinScore: Int, nodeVisit: Int): Double {
     return if (nodeVisit == 0) {
-        Integer.MAX_VALUE.toDouble() // we want to visit unexplored ones first
+        Double.MAX_VALUE // we want to visit unexplored ones first
     } else nodeWinScore.toDouble() / nodeVisit.toDouble() + 1.41 * Math.sqrt(Math.log(totalVisit.toDouble()) / nodeVisit.toDouble())
 }
 
 fun findBestNodeWithUCT(node: Node): Node {
-    return node.children.maxBy { uctValue(node.visits, it.wins, it.visits) } ?: node
+    return node.children.maxBy { uctValue(node.visits, it.wins, it.visits) }!!
 }
 
 
@@ -36,7 +36,7 @@ fun findBestChildNode(node: Node): Node {
 
 private fun selectNode(rootNode: Node): Node {
     var node = rootNode
-    while (node.expanded.not()) {
+    while (node.expanded && node.children.isNotEmpty()) {
         node = findBestNodeWithUCT(node)
     }
     return node
@@ -44,7 +44,7 @@ private fun selectNode(rootNode: Node): Node {
 
 private fun expandNode(node: Node) {
     node.expanded = true
-    node.children = BoardImpl.possibleMoves(node.state).map { Node(BoardImpl.playMove(it, node.state), node, it) }
+    node.children = possibleMoves(node.state).map { Node(playMove(it, node.state), node, it) }
 }
 
 
@@ -67,8 +67,8 @@ private fun simulateRandomPlayout(node: Node, opponent: Winner): Winner {
         return boardStatus
     }
     while (boardStatus == Winner.NONE) {
-        val move = BoardImpl.randomMove(tempState)
-        BoardImpl.playMoveInPlace(move!!, tempState)
+        val move = randomMove(tempState)
+        playMoveInPlace(move!!, tempState)
         boardStatus = MoveValidator.won(tempState)
     }
     return boardStatus
@@ -108,9 +108,7 @@ class MonteCarloTreeSearch(startingState: State) {
             )
         }
 
-        val winnerNode = findBestChildNode(rootNode)
-        tree.root = winnerNode
-        return winnerNode.move!!
+        return findBestChildNode(rootNode).move!!
     }
 
 }

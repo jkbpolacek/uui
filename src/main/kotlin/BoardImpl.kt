@@ -40,8 +40,6 @@ const val STATE_SIZE = 23
 /* 22 for draws*/
 
 
-object BoardImpl {
-
     // val moveMap: Map<Pair<State, Move>, State> = HashMap()
     // consider later
 
@@ -125,10 +123,8 @@ object BoardImpl {
         }
 
         when {
-
             MoveValidator.checkBoardPositionValid(move.pos, state) -> state.s[20] = move.pos
             else -> state.s[20] = -1
         }
         state.s[21] = 3 - state.s[21] // handle player changing
     }
-}

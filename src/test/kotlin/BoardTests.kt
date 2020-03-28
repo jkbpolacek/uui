@@ -5,31 +5,31 @@ import org.junit.Test
 class BoardTests {
     @Test
     fun `Board moves 1`() {
-        val state = BoardImpl.startingState()
+        val state = startingState()
         val move = Move(0, 0)
         val expectedState = State(arrayOf(
                 1,0, 0,0, 0,0,
                 0,0, 0,0, 0,0,
                 0,0, 0,0, 0,0,
-                0,0, 0, 2))
+                0,0, 0, 2, 0))
 
-        val newState = BoardImpl.playMove(move, state)
+        val newState = playMove(move, state)
         assertEquals(newState, expectedState)
     }
 
     @Test
     fun `Board moves 2`() {
-        val state = BoardImpl.startingState()
+        val state = startingState()
 
         val move = Move(0, 1)
         val expectedState = State(arrayOf(
                 0, 0, 1, 0, 0, 0,
                 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 2))
+                0, 0, 0, 2, 0))
 
-        val newState = BoardImpl.playMove(move, state)
-        val newState2 = BoardImpl.playMove(move, state)
+        val newState = playMove(move, state)
+        val newState2 = playMove(move, state)
 
 
 
@@ -45,7 +45,7 @@ class BoardTests {
 
     @Test
     fun `Board moves 3`() {
-        val state = BoardImpl.startingState()
+        val state = startingState()
 
 
         val move = Move(1, 2)
@@ -53,9 +53,9 @@ class BoardTests {
                 0, 0, 0, 0, 2, 0,
                 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0,
-                0, 0, 1, 2))
+                0, 0, 1, 2, 0))
 
-        val newState = BoardImpl.playMove(move, state)
+        val newState = playMove(move, state)
         assertEquals(newState, expectedState)
     }
 }
