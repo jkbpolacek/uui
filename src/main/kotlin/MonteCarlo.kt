@@ -1,97 +1,116 @@
-class MonteCarlo(var currentState: State) {
-/*
-    private val plays: MutableMap<State, Int> = mutableMapOf()
-    private val wins: MutableMap<State, Int> = mutableMapOf()
+import java.util.*
 
-    private fun winToPlayRation(state: State): Double {
-        return (wins[state] ?: 0).toDouble() / (plays[state] ?: 1)
+
+// partially copied and then augmented from https://www.baeldung.com/java-monte-carlo-tree-search
+
+private val random = Random()
+
+class Node(val state: State, var parent: Node?, var move: Move?) {
+    lateinit var children: List<Node>
+    var visits: Int = 0
+    var wins: Int = 0
+    fun getPlayer(): Int = state.s[21]
+    fun getRandomChild(): Node? = children[random.nextInt(children.size)]
+    fun getChildByMove(move: Move) = children.firstOrNull { it.move!!.equals(move) }
+
+    var expanded = false
+}
+
+class Tree(var root: Node)
+
+// UCT = Upper Confidence Bound 1 applied to trees
+fun uctValue(totalVisit: Int, nodeWinScore: Int, nodeVisit: Int): Double {
+    return if (nodeVisit == 0) {
+        Integer.MAX_VALUE.toDouble() // we want to visit unexplored ones first
+    } else nodeWinScore.toDouble() / nodeVisit.toDouble() + 1.41 * Math.sqrt(Math.log(totalVisit.toDouble()) / nodeVisit.toDouble())
+}
+
+fun findBestNodeWithUCT(node: Node): Node {
+    return node.children.maxBy { uctValue(node.visits, it.wins, it.visits) } ?: node
+}
+
+
+fun findBestChildNode(node: Node): Node {
+    return node.children.maxBy { if (it.visits == 0) -1.0 else it.wins.toDouble() / it.visits.toDouble() }!!
+}
+
+private fun selectNode(rootNode: Node): Node {
+    var node = rootNode
+    while (node.expanded.not()) {
+        node = findBestNodeWithUCT(node)
+    }
+    return node
+}
+
+private fun expandNode(node: Node) {
+    node.expanded = true
+    node.children = BoardImpl.possibleMoves(node.state).map { Node(BoardImpl.playMove(it, node.state), node, it) }
+}
+
+
+private fun backPropagate(nodeToExplore: Node, winner: Int) {
+    var tempNode: Node? = nodeToExplore
+    while (tempNode != null) {
+        tempNode.visits += 1
+        if (tempNode.getPlayer() == winner) {
+            tempNode.wins += 1
+        }
+        tempNode = tempNode.parent
+    }
+}
+
+private fun simulateRandomPlayout(node: Node, opponent: Winner): Winner {
+    val tempState = node.state.copy()
+    var boardStatus = MoveValidator.won(tempState)
+    if (boardStatus == opponent) {
+        node.wins = 0
+        return boardStatus
+    }
+    while (boardStatus == Winner.NONE) {
+        val move = BoardImpl.randomMove(tempState)
+        BoardImpl.playMoveInPlace(move!!, tempState)
+        boardStatus = MoveValidator.won(tempState)
+    }
+    return boardStatus
+}
+
+class MonteCarloTreeSearch(startingState: State) {
+
+    private val tree = Tree(Node(startingState, null, null))
+
+    fun moveTree(move: Move) {
+        tree.root = tree.root.getChildByMove(move)!!
     }
 
-    private fun runSimulation() {
-        var state = currentState
-
-
-        val visitedStates: MutableSet<State> = hashSetOf()
-        var expand = true
-
-        mainLoop@ for (t in 0..MAX_MOVES) {
-
-            val legalMoves = BoardApi.legalPlays(state)
-            val legalNextStates = legalMoves.map { state.nextState(it) }
-
-            // if we have statistics for each possible state, pick one according to a formula, otherwise pick randomly
-            val play = if (legalNextStates.all { visitedStates.contains(it) }) {
-                val logTotal = ln(legalNextStates.sumBy { plays[it] ?: 0 }.toDouble())
-
-                legalNextStates.maxBy {
-                    winToPlayRation(it) + 1.4 * sqrt(logTotal / (plays[it] ?: 1))
-                }?.previousMove ?: legalMoves.shuffled().firstOrNull() ?: break@mainLoop
-
-            } else {
-                val shuffled = legalMoves.shuffled()
-                shuffled.firstOrNull() ?: break@mainLoop
-            }
-
-            state = BoardApi.nextState(state, play)
-
-            if (expand && plays[state] == null) {
-                expand = false
-                plays[state] = 0
-                wins[state] = 0
-            }
-
-            visitedStates.add(state)
-
-            victor = BoardApi.winner(state)
-            if (victor != Victor.ONGOING) break@mainLoop
-        }
-
-        visitedStates.forEach {
-            if (plays.contains(it)) {
-                plays[it] = plays[it]!! + 1
-                if (victor == Victor.ME) {
-                    wins[it] = wins[it]!! + 1
-                }
+    fun findNextMove(currentPlayer: Winner): Move {
+        val rootNode = tree.root
+        if (rootNode.expanded.not()) {
+            expandNode(rootNode) // shoudln't happen
+            if (rootNode.children.isEmpty()) {
+                throw IllegalArgumentException("No more moves possible.")
             }
         }
+
+        // define an end time which will act as a terminating condition
+        val end = System.currentTimeMillis() + 950
+
+        while (System.currentTimeMillis() < end) {
+            val promisingNode = selectNode(rootNode)
+            expandNode(promisingNode)
+
+            var nodeToExplore = promisingNode
+            if (promisingNode.children.isNotEmpty()) {
+                nodeToExplore = promisingNode.getRandomChild()!!
+            }
+            backPropagate(
+                    nodeToExplore,
+                    winnerToInt(simulateRandomPlayout(nodeToExplore, winnerToOponent(currentPlayer)))
+            )
+        }
+
+        val winnerNode = findBestChildNode(rootNode)
+        tree.root = winnerNode
+        return winnerNode.move!!
     }
-
-    fun getNextPlay(maxTimeMillis: Long): Pos {
-
-        BoardApi.run {
-            val legal = legalPlays(currentState)
-
-            if (legal.isEmpty()) {
-                return Pos(0, 0)
-            } else if (legal.size == 1) {
-                return legal.first()
-            }
-
-            var games = 0
-
-            val clock = Clock.systemUTC()
-            val begin = clock.instant().toEpochMilli()
-            while (clock.instant().toEpochMilli() - begin < maxTimeMillis) {
-                runSimulation()
-                games += 1
-            }
-
-            totalGames += games
-            System.err.println("Ran $games games, total $totalGames")
-
-            // Pick the move with the highest percentage of wins.
-            val bestMove = legal.maxBy {
-                winToPlayRation(nextState(currentState, it))
-            }
-
-            return bestMove!!
-        }
-    }
-
-        private const val MAX_MOVES = 100
-        var totalGames = 0
-
-    */
-
 
 }

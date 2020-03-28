@@ -65,6 +65,43 @@ class GameTests {
     @Test
     fun `Measure 10000 game plays`() {
 
+        val time = measureTimeMillis {
+
+            for (i in 0..9999) {
+                var state = BoardImpl.startingState()
+                while (MoveValidator.won(state) == Winner.NONE) {
+                    val move = BoardImpl.randomMove(state)
+                    state = BoardImpl.playMove(move!!, state)
+                }
+            }
+        }
+
+        println("Time for game $time")  // expect roughly 900 ms
+    }
+
+
+
+    @Test
+    fun `Measure 100000 game plays`() {
+
+        val time = measureTimeMillis {
+
+            for (i in 0..99999) {
+                var state = BoardImpl.startingState()
+                while (MoveValidator.won(state) == Winner.NONE) {
+                    val move = BoardImpl.randomMove(state)
+                    state = BoardImpl.playMove(move!!, state)
+                }
+            }
+        }
+
+        println("Time for game $time")  // expect roughly 6000 ms
+    }
+
+
+    @Test
+    fun `Average moves in 10000 game plays`() {
+
         var movesCount = 0
         val time = measureTimeMillis {
 
@@ -78,7 +115,30 @@ class GameTests {
             }
         }
 
-        println("Moves $movesCount")
-        println("Time for game $time")  // expect roughly 800 ms
+        println("Moves ${movesCount/10000}")
+    }
+
+
+
+    @Test
+    fun `Max moves in 1000000 game plays`() {
+
+        var maxMovesCount = 0
+        val time = measureTimeMillis {
+
+            for (i in 0..999999) {
+                var movesCount = 0
+                var state = BoardImpl.startingState()
+                while (MoveValidator.won(state) == Winner.NONE) {
+                    val move = BoardImpl.randomMove(state)
+                    state = BoardImpl.playMove(move!!, state)
+                    movesCount += 1
+                }
+
+                maxMovesCount = Math.max(movesCount, maxMovesCount)
+            }
+        }
+
+        println("Max moves count $maxMovesCount")
     }
 }

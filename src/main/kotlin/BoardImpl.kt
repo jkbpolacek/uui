@@ -29,11 +29,6 @@ typealias SBoard = Int
 
 const val STATE_SIZE = 23
 
-interface Board {
-    fun possibleMoves(state: State): List<Move>
-    fun startingState(): State
-    fun playMove(move: Move, state: State): State
-}
 /*
 0, 1  2, 3  4, 5
 6, 7  8, 9  10,11
@@ -45,7 +40,7 @@ interface Board {
 /* 22 for draws*/
 
 
-object BoardImpl : Board {
+object BoardImpl {
 
     // val moveMap: Map<Pair<State, Move>, State> = HashMap()
     // consider later
@@ -70,7 +65,7 @@ object BoardImpl : Board {
     }
 
 
-    override fun possibleMoves(state: State): List<Move> {
+    fun possibleMoves(state: State): List<Move> {
         val nextShortBoard = state.s[20]
         val result = (if (nextShortBoard < 0) MoveValidator.allMoves.filter { MoveValidator.validate(it, state) }
         else MoveValidator.sBoardToMoves[nextShortBoard]).filter { MoveValidator.validate(it, state) }
@@ -84,7 +79,7 @@ object BoardImpl : Board {
         }
     }
 
-    override fun startingState(): State {
+    fun startingState(): State {
         return State(arrayOf(
                 0,0, 0,0, 0,0,
                 0,0, 0,0, 0,0,
@@ -92,7 +87,7 @@ object BoardImpl : Board {
                 0,0, -1, 1, 0))
     }
 
-    override fun playMove(move: Move, state: State): State {
+    fun playMove(move: Move, state: State): State {
         val player = state.s[21]
         val newState = state.copy()
 
@@ -113,5 +108,27 @@ object BoardImpl : Board {
         }
         newState.s[21] = 3 - newState.s[21] // handle player changing
         return newState
+    }
+
+
+    fun playMoveInPlace(move: Move, state: State) {
+        val player = state.s[21]
+
+        val sBoard = putMoveOnSBoard(state, move)
+
+        if (MoveValidator.finished(sBoard)) {
+            state.s[18 + player - 1] = state.s[18 + player - 1] or (1 shl move.boardpos) // mark victory
+            state.s[22] = state.s[22] or (1 shl move.boardpos)
+        }
+        else if (MoveValidator.checkBoardPositionValid(move.boardpos, state).not()) {
+            state.s[22] = state.s[22] or (1 shl move.boardpos) // mark board is full
+        }
+
+        when {
+
+            MoveValidator.checkBoardPositionValid(move.pos, state) -> state.s[20] = move.pos
+            else -> state.s[20] = -1
+        }
+        state.s[21] = 3 - state.s[21] // handle player changing
     }
 }

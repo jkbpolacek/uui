@@ -50,11 +50,13 @@ object MoveValidator {
 
     fun checkBoardPositionValid(boardpos: Int, state: State) = finished(state.s[boardpos*2]  or state.s[boardpos*2 + 1]).not()
 
+
+    // TODO: Implement check for higher count of achieved wins
     fun won(state: State): Winner {
         return when {
             finished(state.s[18]) -> Winner.ONE
             finished(state.s[19]) -> Winner.TWO
-            ((state.s[18] or state.s[19] or state.s[22]) and 0b111111111) == 0b111111111 -> Winner.FULL
+            (state.s[18] or state.s[19] or state.s[22]) == 0b111111111 -> Winner.FULL
             else -> Winner.NONE
         }
 
@@ -67,4 +69,21 @@ enum class Winner {
     TWO,
     NONE,
     FULL
+}
+
+fun winnerToInt(winner: Winner): Int {
+    return when(winner) {
+        Winner.ONE -> 1
+        Winner.TWO -> 2
+        Winner.NONE -> 0
+        Winner.FULL -> 3
+    }
+}
+
+fun winnerToOponent(winner: Winner): Winner {
+    return when(winner) {
+        Winner.ONE -> Winner.TWO
+        Winner.TWO -> Winner.ONE
+        else -> throw IllegalArgumentException()
+    }
 }
