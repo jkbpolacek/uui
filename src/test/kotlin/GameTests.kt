@@ -6,7 +6,7 @@ class GameTests {
     fun `Board moves 1`() {
         var state = startingState()
         var movesCount = 0
-        while (MoveValidator.won(state) == Winner.NONE) {
+        while (won(state) == Winner.NONE) {
             val move = randomMove(state)
 
             state = playMove(move!!, state)
@@ -25,7 +25,7 @@ class GameTests {
         val time = measureTimeMillis {
 
             var state = startingState()
-            while (MoveValidator.won(state) == Winner.NONE) {
+            while (won(state) == Winner.NONE) {
                 val move = randomMove(state)
                 state = playMove(move!!, state)
                 movesCount += 1
@@ -44,7 +44,7 @@ class GameTests {
 
             for (i in 0..999) {
                 var state = startingState()
-                while (MoveValidator.won(state) == Winner.NONE) {
+                while (won(state) == Winner.NONE) {
                     val move = randomMove(state)
                     if (move == null) {
                         println(movesCount)
@@ -69,7 +69,7 @@ class GameTests {
 
             for (i in 0..9999) {
                 var state = startingState()
-                while (MoveValidator.won(state) == Winner.NONE) {
+                while (won(state) == Winner.NONE) {
                     val move = randomMove(state)
                     state = playMove(move!!, state)
                 }
@@ -87,7 +87,7 @@ class GameTests {
 
             for (i in 0..99999) {
                 var state = startingState()
-                while (MoveValidator.won(state) == Winner.NONE) {
+                while (won(state) == Winner.NONE) {
                     val move = randomMove(state)
                     state = playMove(move!!, state)
                 }
@@ -106,7 +106,7 @@ class GameTests {
 
             for (i in 0..9999) {
                 var state = startingState()
-                while (MoveValidator.won(state) == Winner.NONE) {
+                while (won(state) == Winner.NONE) {
                     val move = randomMove(state)
                     state = playMove(move!!, state)
                     movesCount += 1
@@ -127,7 +127,7 @@ class GameTests {
             for (i in 0..999999) {
                 var movesCount = 0
                 var state = startingState()
-                while (MoveValidator.won(state) == Winner.NONE) {
+                while (won(state) == Winner.NONE) {
                     val move = randomMove(state)
                     state = playMove(move!!, state)
                     movesCount += 1

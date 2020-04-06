@@ -61,7 +61,7 @@ private fun backPropagate(nodeToExplore: Node, winner: Int) {
 
 private fun simulateRandomPlayout(node: Node, opponent: Winner): Winner {
     val tempState = node.state.copy()
-    var boardStatus = MoveValidator.won(tempState)
+    var boardStatus = won(tempState)
     if (boardStatus == opponent) {
         node.wins = 0
         return boardStatus
@@ -69,20 +69,21 @@ private fun simulateRandomPlayout(node: Node, opponent: Winner): Winner {
     while (boardStatus == Winner.NONE) {
         val move = randomMove(tempState)
         playMoveInPlace(move!!, tempState)
-        boardStatus = MoveValidator.won(tempState)
+        boardStatus = won(tempState)
     }
     return boardStatus
 }
 
 class MonteCarloTreeSearch(startingState: State) {
 
-    private val tree = Tree(Node(startingState, null, null))
+    val tree = Tree(Node(startingState, null, null))
 
     fun moveTree(move: Move) {
         tree.root = tree.root.getChildByMove(move)!!
+        tree.root.parent = null
     }
 
-    fun findNextMove(currentPlayer: Winner): Move {
+    fun findNextMove(currentPlayer: Winner, timeOut: Long): Move {
         val rootNode = tree.root
         if (rootNode.expanded.not()) {
             expandNode(rootNode) // shoudln't happen
@@ -92,7 +93,7 @@ class MonteCarloTreeSearch(startingState: State) {
         }
 
         // define an end time which will act as a terminating condition
-        val end = System.currentTimeMillis() + 950
+        val end = System.currentTimeMillis() + timeOut
 
         while (System.currentTimeMillis() < end) {
             val promisingNode = selectNode(rootNode)
