@@ -54,10 +54,16 @@ class MovesTests {
     @Test
     fun `Colrow to move`() {
         assert(rowcolToMove(0, 0)== Move(0, 0))
+        assert(rowcolToMove(0, 3)== Move(0, 1))
         assert(rowcolToMove(0, 1)== Move(1, 0))
         assert(rowcolToMove(1, 0)== Move(3, 0))
         assert(rowcolToMove(1, 3)== Move(3, 1))
+        assert(rowcolToMove(1, 6)== Move(3, 2))
+        assert(rowcolToMove(2, 6)== Move(6, 2))
+
         assert(rowcolToMove(4, 3)== Move(3, 4)) {rowcolToMove(4, 3)}
         assert(rowcolToMove(8, 8)== Move(8, 8)) {rowcolToMove(8, 8)}
+        assert(rowcolToMove(6, 8)== Move(2, 8)) {rowcolToMove(6, 8)}
+        assert(rowcolToMove(4, 4) == Move(4, 4))
     }
 }

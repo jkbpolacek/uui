@@ -58,8 +58,12 @@ fun validate(move: Move, state: State): Boolean {
 
 fun finished(board: SBoard) = winningMoves.any { it and board == it }
 
-fun checkBoardPositionValid(boardpos: Int, state: State) = finished(state.s[boardpos * 2] or state.s[boardpos * 2 + 1]).not()
 
+fun checkBoardPositionValid(boardpos: Int, state: State) = finished(state.s[boardpos * 2]).not() and
+        finished(state.s[boardpos * 2 + 1]).not() and checkBoardPositionFull(boardpos, state).not()
+
+
+fun checkBoardPositionFull(boardpos: Int, state: State) = (state.s[boardpos * 2] or state.s[boardpos * 2 + 1]) == 0b111111111
 
 fun won(state: State): Winner {
     return when {

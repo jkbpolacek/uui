@@ -1,9 +1,4 @@
-import java.util.*
-
-
 // partially copied and then augmented from https://www.baeldung.com/java-monte-carlo-tree-search
-
-private val random = Random()
 
 class Node(val state: State, var parent: Node?, var move: Move?) {
     lateinit var children: List<Node>
@@ -79,8 +74,18 @@ class MonteCarloTreeSearch(startingState: State) {
     val tree = Tree(Node(startingState, null, null))
 
     fun moveTree(move: Move) {
+        if (tree.root.expanded.not()) {
+            expandNode(tree.root)
+        }
+
+        val child = tree.root.getChildByMove(move)
+        if (child == null) {
+            tree.root.children.forEach {
+                System.err.println(it.move)
+            }
+            System.err.println("wanted $move")
+        }
         tree.root = tree.root.getChildByMove(move)!!
-        tree.root.parent = null
     }
 
     fun findNextMove(currentPlayer: Winner, timeOut: Long): Move {
@@ -95,21 +100,39 @@ class MonteCarloTreeSearch(startingState: State) {
         // define an end time which will act as a terminating condition
         val end = System.currentTimeMillis() + timeOut
 
+        System.err.println("Simulating, ${end - System.currentTimeMillis()} left")
+
+        var i = 0
         while (System.currentTimeMillis() < end) {
+            if (System.currentTimeMillis() > end) {
+                System.err.println("Selecting, ${end - System.currentTimeMillis()} left")
+            }
             val promisingNode = selectNode(rootNode)
+            if (System.currentTimeMillis() > end) {
+                System.err.println("Expanding, ${end - System.currentTimeMillis()} left")
+            }
             expandNode(promisingNode)
 
             var nodeToExplore = promisingNode
+
             if (promisingNode.children.isNotEmpty()) {
                 nodeToExplore = promisingNode.getRandomChild()!!
+            }
+            if (System.currentTimeMillis() > end) {
+                System.err.println("Backpropagating, ${end - System.currentTimeMillis()} left")
             }
             backPropagate(
                     nodeToExplore,
                     winnerToInt(simulateRandomPlayout(nodeToExplore, winnerToOponent(currentPlayer)))
             )
+            i+= 1
+            if (System.currentTimeMillis() > end) {
+                System.err.println("Done, ${end - System.currentTimeMillis()} left")
+            }
         }
+        System.err.println("Simulated $i")
 
-        return findBestChildNode(rootNode).move!!
+        return findBestChildNode(rootNode).apply { System.err.println(this.wins.toDouble() / this.visits.toDouble()) }.move!!
     }
 
 }

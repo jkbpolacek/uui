@@ -20,6 +20,36 @@ class State(val s: Array<Int>) {
     override fun toString(): String {
         return Arrays.toString(s)
     }
+
+    /*
+    fun toBoardString(): String {
+        val result = StringBuilder()
+        for (i in 0..9) {
+            val player1 = s[i*2]
+            var player2 = s[i *2 + 1]
+            result.append("Player1 $player1 in binary ${Integer.toBinaryString(player1)}\n")
+            result.append("Player2 $player2 in binary ${Integer.toBinaryString(player2)}\n")
+            val subresult = ArrayList<Char>()
+
+            for (j in 0..8) {
+                when {
+                    player1 and (1 shl j) == 1 shl j -> subresult.add('X')
+                    player2 and (1 shl j) == 1 shl j -> subresult.add('O')
+                    else ->                             subresult.add('-')
+                }
+                if (j % 3 == 2) {
+                    subresult.add('\n')
+                }
+            }
+            result.append(subresult.joinToString(separator=""))
+            result.append("\n")
+            if (i == 8) {
+                result.append("-----------\nBig boards are comming \n")
+            }
+        }
+        return result.toString()
+    }
+    */
 }
 
 
@@ -37,7 +67,7 @@ const val STATE_SIZE = 23
 /* 21 for player */
 /* 22 for draws*/
 
-private val random = Random()
+val random = Random()
 
 
 // replace these for faster future
@@ -86,12 +116,11 @@ fun playMove(move: Move, state: State): State {
 
     if (finished(sBoard)) {
         newState.s[18 + player - 1] = newState.s[18 + player - 1] or (1 shl move.boardpos) // mark victory
-    } else if (checkBoardPositionValid(move.boardpos, state).not()) {
+    } else if (checkBoardPositionFull(move.boardpos, newState)) {
         newState.s[22] = newState.s[22] or (1 shl move.boardpos) // mark board is full
     }
 
     when {
-
         checkBoardPositionValid(move.pos, newState) -> newState.s[20] = move.pos
         else -> newState.s[20] = -1
     }
@@ -108,7 +137,7 @@ fun playMoveInPlace(move: Move, state: State) {
     if (finished(sBoard)) {
         state.s[18 + player - 1] = state.s[18 + player - 1] or (1 shl move.boardpos) // mark victory
 
-    } else if (checkBoardPositionValid(move.boardpos, state).not()) {
+    } else if (checkBoardPositionFull(move.boardpos, state)) {
         state.s[22] = state.s[22] or (1 shl move.boardpos) // mark board is full
     }
 

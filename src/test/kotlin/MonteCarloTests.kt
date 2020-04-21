@@ -5,7 +5,7 @@ class MonteCarloTests {
     fun `Overall test`() {
         val state = startingState()
         val carlo = MonteCarloTreeSearch(state)
-        val move = carlo.findNextMove(Winner.ONE, 90000L)
+        val move = carlo.findNextMove(Winner.ONE, 900L)
         println(move.let { "pos=${it.pos} boardpos=${it.boardpos}" })
         println("Simulated ${carlo.tree.root.visits} games")
         println("Wins ${carlo.tree.root.wins}")

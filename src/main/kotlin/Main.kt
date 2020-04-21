@@ -1,7 +1,7 @@
 import java.util.*
 
-const val BIG_TIMEOUT = 950
-const val SMALL_TIMEOUT = 105L
+const val BIG_TIMEOUT: Long = 950L
+const val SMALL_TIMEOUT: Long = 85L
 
 fun main(args: Array<String>) {
     val input = Scanner(System.`in`)
@@ -16,23 +16,19 @@ fun main(args: Array<String>) {
         input.nextInt()
     }
 
-    var thisPlayer: Winner
+    val thisPlayer: Winner
 
     val state = startingState()
     val carlo = MonteCarloTreeSearch(state)
     if (opponentRow == -1) {
         thisPlayer = Winner.ONE
-        val firstMove = Move(1, 1)
-        playMoveInPlace(firstMove, state)
-        carlo.findNextMove(Winner.TWO, BIG_TIMEOUT) // vyuzivame cas na simulaciu akoby za druheho hraca
-        println(firstMove)
-
     } else {
         thisPlayer = Winner.TWO
         playMoveInPlace(rowcolToMove(opponentRow, opponentCol), state)
-        println(carlo.findNextMove(2, BIG_TIMEOUT))
     }
-
+    val move = carlo.findNextMove(thisPlayer, BIG_TIMEOUT)
+    carlo.moveTree(move)
+    println(move)
 
     // game loop
     while (true) {
@@ -49,6 +45,14 @@ fun main(args: Array<String>) {
 
 
         carlo.moveTree(rowcolToMove(opponentRow, opponentCol))
-        println(carlo.findNextMove(thisPlayer, BIG_TIMEOUT))
+
+        val move = carlo.findNextMove(thisPlayer, SMALL_TIMEOUT)
+        System.err.println("Starting at ${carlo.tree.root.move}")
+        System.err.println("STate ${carlo.tree.root.state}")
+        System.err.println("Can play anywhere ${checkBoardPositionValid(carlo.tree.root.move!!.pos, carlo.tree.root.state)}")
+        System.err.println("Valid moves ${possibleMoves(carlo.tree.root.state).joinToString()}")
+        carlo.moveTree(move)
+        System.err.println("Ended at ${carlo.tree.root.move}")
+        println(move)
     }
 }
