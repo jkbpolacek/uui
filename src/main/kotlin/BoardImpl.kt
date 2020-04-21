@@ -147,3 +147,6 @@ fun playMoveInPlace(move: Move, state: State) {
     }
     state.s[21] = 3 - state.s[21] // handle player changing
 }
+
+
+

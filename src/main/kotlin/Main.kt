@@ -1,43 +1,52 @@
 import java.util.*
 
 const val BIG_TIMEOUT: Long = 950L
-const val SMALL_TIMEOUT: Long = 85L
+const val SMALL_TIMEOUT: Long = 50L
 
 fun main(args: Array<String>) {
     val input = Scanner(System.`in`)
 
 
     // first turn
-    val opponentRow = input.nextInt()
-    val opponentCol = input.nextInt()
-    val validActionCount = input.nextInt()
+    var opponentRow = input.nextInt()
+    var opponentCol = input.nextInt()
+    var validActionCount = input.nextInt()
     for (i in 0 until validActionCount) {
+        // we must accept this input but dont need it
         input.nextInt()
         input.nextInt()
     }
 
-    val thisPlayer: Winner
+    val opponent: Winner
+    val firstMove: Move
 
     val state = startingState()
-    val carlo = MonteCarloTreeSearch(state)
+    val carlo: MonteCarloTreeSearch
     if (opponentRow == -1) {
-        thisPlayer = Winner.ONE
+        opponent = Winner.TWO
+        carlo = MonteCarloTreeSearch(state, opponent)
+        firstMove = Move(4, 4)
+        carlo.moveTree(firstMove)
+        carlo.findNextMove(BIG_TIMEOUT)
     } else {
-        thisPlayer = Winner.TWO
+        opponent = Winner.ONE
+        carlo = MonteCarloTreeSearch(state, opponent)
         playMoveInPlace(rowcolToMove(opponentRow, opponentCol), state)
+        firstMove = carlo.findNextMove(BIG_TIMEOUT)
+        carlo.moveTree(firstMove)
     }
-    val move = carlo.findNextMove(thisPlayer, BIG_TIMEOUT)
-    carlo.moveTree(move)
-    println(move)
+
+    println(firstMove)
 
     // game loop
     while (true) {
-        val opponentRow = input.nextInt()
-        val opponentCol = input.nextInt()
-        val validActionCount = input.nextInt()
+        opponentRow = input.nextInt()
+        opponentCol = input.nextInt()
+        validActionCount = input.nextInt()
         for (i in 0 until validActionCount) {
-            val row = input.nextInt()
-            val col = input.nextInt()
+            // we must accept this input but dont need it
+            input.nextInt()
+            input.nextInt()
         }
 
         // Write an action using println()
@@ -45,14 +54,8 @@ fun main(args: Array<String>) {
 
 
         carlo.moveTree(rowcolToMove(opponentRow, opponentCol))
-
-        val move = carlo.findNextMove(thisPlayer, SMALL_TIMEOUT)
-        System.err.println("Starting at ${carlo.tree.root.move}")
-        System.err.println("STate ${carlo.tree.root.state}")
-        System.err.println("Can play anywhere ${checkBoardPositionValid(carlo.tree.root.move!!.pos, carlo.tree.root.state)}")
-        System.err.println("Valid moves ${possibleMoves(carlo.tree.root.state).joinToString()}")
-        carlo.moveTree(move)
-        System.err.println("Ended at ${carlo.tree.root.move}")
-        println(move)
+        val nextMove = carlo.findNextMove(SMALL_TIMEOUT)
+        carlo.moveTree(nextMove)
+        println(nextMove)
     }
 }

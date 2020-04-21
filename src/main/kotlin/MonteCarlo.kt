@@ -1,12 +1,14 @@
 // partially copied and then augmented from https://www.baeldung.com/java-monte-carlo-tree-search
 
+
 class Node(val state: State, var parent: Node?, var move: Move?) {
     lateinit var children: List<Node>
+    var instantLoss = false
     var visits: Int = 0
     var wins: Int = 0
     fun getPlayer(): Int = getPlayer(state)
-    fun getRandomChild(): Node? = children[random.nextInt(children.size)]
     fun getChildByMove(move: Move) = children.firstOrNull { it.move!!.equals(move) }
+    fun winRatio() = if (instantLoss || visits <= 0) -1.0 else wins.toDouble() / visits.toDouble()
 
     var expanded = false
 }
@@ -14,19 +16,22 @@ class Node(val state: State, var parent: Node?, var move: Move?) {
 class Tree(var root: Node)
 
 // UCT = Upper Confidence Bound 1 applied to trees
-fun uctValue(totalVisit: Int, nodeWinScore: Int, nodeVisit: Int): Double {
-    return if (nodeVisit == 0) {
-        Double.MAX_VALUE // we want to visit unexplored ones first
-    } else nodeWinScore.toDouble() / nodeVisit.toDouble() + 1.41 * Math.sqrt(Math.log(totalVisit.toDouble()) / nodeVisit.toDouble())
+fun uctValue(totalVisit: Int, node: Node): Double {
+    return when {
+        node.instantLoss -> -1.0
+        node.visits == 0 -> Double.MAX_VALUE // we want to visit unexplored ones first
+        else -> node.winRatio() + 1.41 * Math.sqrt(Math.log(totalVisit.toDouble()) / node.visits.toDouble())
+    }
 }
 
 fun findBestNodeWithUCT(node: Node): Node {
-    return node.children.maxBy { uctValue(node.visits, it.wins, it.visits) }!!
+    return node.children.maxBy { uctValue(node.visits, it) }!!
 }
 
 
 fun findBestChildNode(node: Node): Node {
-    return node.children.maxBy { if (it.visits == 0) -1.0 else it.wins.toDouble() / it.visits.toDouble() }!!
+    // ta co je toto za bullshit // return node.children.maxBy { it.visits }!!
+    return node.children.maxBy { it.winRatio() }!!
 }
 
 private fun selectNode(rootNode: Node): Node {
@@ -47,7 +52,7 @@ private fun backPropagate(nodeToExplore: Node, winner: Int) {
     var tempNode: Node? = nodeToExplore
     while (tempNode != null) {
         tempNode.visits += 1
-        if (tempNode.getPlayer() == winner) {
+        if (3 - tempNode.getPlayer() == winner) { // vyhry zapisujeme opacne
             tempNode.wins += 1
         }
         tempNode = tempNode.parent
@@ -58,7 +63,11 @@ private fun simulateRandomPlayout(node: Node, opponent: Winner): Winner {
     val tempState = node.state.copy()
     var boardStatus = won(tempState)
     if (boardStatus == opponent) {
+        node.parent?.wins = 0
+        node.parent?.instantLoss = true
         node.wins = 0
+
+        node.instantLoss = true
         return boardStatus
     }
     while (boardStatus == Winner.NONE) {
@@ -69,7 +78,7 @@ private fun simulateRandomPlayout(node: Node, opponent: Winner): Winner {
     return boardStatus
 }
 
-class MonteCarloTreeSearch(startingState: State) {
+class MonteCarloTreeSearch(startingState: State, val opponent: Winner) {
 
     val tree = Tree(Node(startingState, null, null))
 
@@ -78,17 +87,11 @@ class MonteCarloTreeSearch(startingState: State) {
             expandNode(tree.root)
         }
 
-        val child = tree.root.getChildByMove(move)
-        if (child == null) {
-            tree.root.children.forEach {
-                System.err.println(it.move)
-            }
-            System.err.println("wanted $move")
-        }
-        tree.root = tree.root.getChildByMove(move)!!
+        tree.root = tree.root.getChildByMove(move) ?: throw IllegalStateException("No children left")
+        tree.root.parent = null
     }
 
-    fun findNextMove(currentPlayer: Winner, timeOut: Long): Move {
+    fun findNextMove(timeOut: Long): Move {
         val rootNode = tree.root
         if (rootNode.expanded.not()) {
             expandNode(rootNode) // shoudln't happen
@@ -100,39 +103,23 @@ class MonteCarloTreeSearch(startingState: State) {
         // define an end time which will act as a terminating condition
         val end = System.currentTimeMillis() + timeOut
 
-        System.err.println("Simulating, ${end - System.currentTimeMillis()} left")
-
         var i = 0
         while (System.currentTimeMillis() < end) {
-            if (System.currentTimeMillis() > end) {
-                System.err.println("Selecting, ${end - System.currentTimeMillis()} left")
-            }
             val promisingNode = selectNode(rootNode)
-            if (System.currentTimeMillis() > end) {
-                System.err.println("Expanding, ${end - System.currentTimeMillis()} left")
-            }
             expandNode(promisingNode)
-
-            var nodeToExplore = promisingNode
-
-            if (promisingNode.children.isNotEmpty()) {
-                nodeToExplore = promisingNode.getRandomChild()!!
-            }
-            if (System.currentTimeMillis() > end) {
-                System.err.println("Backpropagating, ${end - System.currentTimeMillis()} left")
-            }
             backPropagate(
-                    nodeToExplore,
-                    winnerToInt(simulateRandomPlayout(nodeToExplore, winnerToOponent(currentPlayer)))
+                    promisingNode,
+                    winnerToInt(simulateRandomPlayout(promisingNode, opponent))
             )
-            i+= 1
+            i += 1
             if (System.currentTimeMillis() > end) {
                 System.err.println("Done, ${end - System.currentTimeMillis()} left")
+                break
             }
         }
         System.err.println("Simulated $i")
 
-        return findBestChildNode(rootNode).apply { System.err.println(this.wins.toDouble() / this.visits.toDouble()) }.move!!
+        return findBestChildNode(rootNode).move!!
     }
 
 }

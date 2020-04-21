@@ -72,7 +72,7 @@ class GameTests {
                 while (won(state) == Winner.NONE) {
                     val move = randomMove(state)
                     if (move == null) {
-                        println(state.toBoardString())
+                        //println(state.toBoardString())
                         println(state)
                     }
                     state = playMove(move!!, state)

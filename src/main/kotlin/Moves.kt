@@ -110,8 +110,8 @@ fun winnerToInt(winner: Winner): Int {
     return when (winner) {
         Winner.ONE -> 1
         Winner.TWO -> 2
-        Winner.NONE -> 0
         Winner.FULL -> 3
+        else -> throw IllegalArgumentException()
     }
 }
 
