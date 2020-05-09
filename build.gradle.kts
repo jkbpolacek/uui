@@ -15,6 +15,7 @@ repositories {
 dependencies {
     compile(kotlin("stdlib-jdk8"))
     testCompile("junit", "junit", "4.12")
+    compile(kotlin("script-runtime"))
 }
 
 configure<JavaPluginConvention> {

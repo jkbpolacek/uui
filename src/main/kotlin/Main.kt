@@ -3,6 +3,10 @@ import java.util.*
 const val BIG_TIMEOUT: Long = 950L
 const val SMALL_TIMEOUT: Long = 50L
 
+/**
+ * Interface for codinggame.com
+ */
+
 fun main(args: Array<String>) {
     val input = Scanner(System.`in`)
 
@@ -21,16 +25,18 @@ fun main(args: Array<String>) {
     val firstMove: Move
 
     val state = startingState()
-    val carlo: MonteCarloTreeSearch
+    val carlo: MonteCarloTreeSearchBasic
+
+    // if oponent gives -1, it means we start first
     if (opponentRow == -1) {
         opponent = Winner.TWO
-        carlo = MonteCarloTreeSearch(state, opponent)
+        carlo = MonteCarloTreeSearchBasic(state, opponent)
         firstMove = Move(4, 4)
         carlo.moveTree(firstMove)
         carlo.findNextMove(BIG_TIMEOUT)
     } else {
         opponent = Winner.ONE
-        carlo = MonteCarloTreeSearch(state, opponent)
+        carlo = MonteCarloTreeSearchBasic(state, opponent)
         playMoveInPlace(rowcolToMove(opponentRow, opponentCol), state)
         firstMove = carlo.findNextMove(BIG_TIMEOUT)
         carlo.moveTree(firstMove)

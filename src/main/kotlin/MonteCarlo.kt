@@ -1,39 +1,12 @@
 // partially copied and then augmented from https://www.baeldung.com/java-monte-carlo-tree-search
 
+/**
+ * Monte Carlo algoritm follows - selection, expansion, back-propagation and simulation
+ */
 
-class Node(val state: State, var parent: Node?, var move: Move?) {
-    lateinit var children: List<Node>
-    var instantLoss = false
-    var visits: Int = 0
-    var wins: Int = 0
-    fun getPlayer(): Int = getPlayer(state)
-    fun getChildByMove(move: Move) = children.firstOrNull { it.move!!.equals(move) }
-    fun winRatio() = if (instantLoss || visits <= 0) -1.0 else wins.toDouble() / visits.toDouble()
-
-    var expanded = false
-}
-
-class Tree(var root: Node)
-
-// UCT = Upper Confidence Bound 1 applied to trees
-fun uctValue(totalVisit: Int, node: Node): Double {
-    return when {
-        node.instantLoss -> -1.0
-        node.visits == 0 -> Double.MAX_VALUE // we want to visit unexplored ones first
-        else -> node.winRatio() + 1.41 * Math.sqrt(Math.log(totalVisit.toDouble()) / node.visits.toDouble())
-    }
-}
-
-fun findBestNodeWithUCT(node: Node): Node {
-    return node.children.maxBy { uctValue(node.visits, it) }!!
-}
-
-
-fun findBestChildNode(node: Node): Node {
-    // ta co je toto za bullshit // return node.children.maxBy { it.visits }!!
-    return node.children.maxBy { it.winRatio() }!!
-}
-
+/**
+ * Select node by the UCT metric
+ */
 private fun selectNode(rootNode: Node): Node {
     var node = rootNode
     while (node.expanded && node.children.isNotEmpty()) {
@@ -42,12 +15,17 @@ private fun selectNode(rootNode: Node): Node {
     return node
 }
 
+/**
+ * Create a child node for each possible move in this node
+ */
 private fun expandNode(node: Node) {
     node.expanded = true
     node.children = possibleMoves(node.state).map { Node(playMove(it, node.state), node, it) }
 }
 
-
+/**
+ * Backpropagate simulaton's result up the tree, recalculate affected values
+ */
 private fun backPropagate(nodeToExplore: Node, winner: Int) {
     var tempNode: Node? = nodeToExplore
     while (tempNode != null) {
@@ -55,6 +33,7 @@ private fun backPropagate(nodeToExplore: Node, winner: Int) {
         if (3 - tempNode.getPlayer() == winner) { // vyhry zapisujeme opacne
             tempNode.wins += 1
         }
+        tempNode.children.forEach { it.uctValue = calculateUctValue(tempNode!!.visits, it) }
         tempNode = tempNode.parent
     }
 }
@@ -78,11 +57,14 @@ private fun simulateRandomPlayout(node: Node, opponent: Winner): Winner {
     return boardStatus
 }
 
-class MonteCarloTreeSearch(startingState: State, val opponent: Winner) {
+class MonteCarloTreeSearchBasic(startingState: State, val opponent: Winner): MCTS {
 
     val tree = Tree(Node(startingState, null, null))
 
-    fun moveTree(move: Move) {
+    /**
+     * We move the tree to make backpropagation faster after enemy moves
+     */
+    override fun moveTree(move: Move) {
         if (tree.root.expanded.not()) {
             expandNode(tree.root)
         }
@@ -91,7 +73,11 @@ class MonteCarloTreeSearch(startingState: State, val opponent: Winner) {
         tree.root.parent = null
     }
 
-    fun findNextMove(timeOut: Long): Move {
+
+    /**
+     * Main method that given a timeout, will simulate moves for that much time and then return best computed move
+     */
+    override fun findNextMove(timeOut: Long): Move {
         val rootNode = tree.root
         if (rootNode.expanded.not()) {
             expandNode(rootNode) // shoudln't happen
@@ -103,21 +89,23 @@ class MonteCarloTreeSearch(startingState: State, val opponent: Winner) {
         // define an end time which will act as a terminating condition
         val end = System.currentTimeMillis() + timeOut
 
-        var i = 0
-        while (System.currentTimeMillis() < end) {
+        var simulatedGames = 0
+        while (true) {
             val promisingNode = selectNode(rootNode)
             expandNode(promisingNode)
             backPropagate(
                     promisingNode,
                     winnerToInt(simulateRandomPlayout(promisingNode, opponent))
             )
-            i += 1
-            if (System.currentTimeMillis() > end) {
-                System.err.println("Done, ${end - System.currentTimeMillis()} left")
-                break
+            simulatedGames += 1
+            if (simulatedGames % 50 == 0) {
+                // every 50 games we check if we have already passed the time limit
+                if (System.currentTimeMillis() > end) {
+                    break
+                }
             }
         }
-        System.err.println("Simulated $i")
+        System.err.println("Simulated $simulatedGames") // err printing results in displaying the value on codinggame.com
 
         return findBestChildNode(rootNode).move!!
     }

@@ -1,5 +1,24 @@
 import java.util.*
 
+
+// We use ints to represent each board, this helps us keep the code cleaner
+typealias SmallBoard = Int
+
+const val STATE_SIZE = 23
+
+/**
+ * Represents state of a game with an array
+ *
+ *
+ *  0, 1  2, 3  4, 5
+ *  6, 7  8, 9  10,11
+ *  12,13 14,15 16,17
+ *  each represent moves taken by player 1 and 2 respectively
+ *  18, 19 is the same but for overall small board victories / big board
+ *  20 for the positon of next expected small board
+ *  21 for the expected next player
+ *  22 for draws on small boards
+ */
 class State(val s: Array<Int>) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -53,37 +72,33 @@ class State(val s: Array<Int>) {
 }
 
 
-typealias SBoard = Int
-
-const val STATE_SIZE = 23
-
-/*
-0, 1  2, 3  4, 5
-6, 7  8, 9  10,11
-12,13 14,15 16,17
-*/
-/* 18, 19 for the big boardpos */
-/* 20 for the next expected play boardpos*/
-/* 21 for player */
-/* 22 for draws*/
 
 val random = Random()
 
-
-// replace these for faster future
+/**
+ * Convenince methods
+ */
 
 fun getPlayer(state: State): Int = state.s[21]
 
-fun getPlayerModifier(state: State): Int = getPlayer(state) - 1
+/**
+* Returns the position of small board of a state specified by move and next player
+*/
 
-fun getSmallBoard(state: State, move: Move) = move.boardpos * 2 + getPlayerModifier(state)
+fun getSmallBoardPos(state: State, move: Move) = move.boardpos * 2 + getPlayer(state) - 1
 
-fun putMoveOnSBoard(state: State, move: Move): SBoard {
-    state.s[getSmallBoard(state, move)] = state.s[getSmallBoard(state, move)] or (1 shl move.pos)
-    return state.s[getSmallBoard(state, move)]
+
+/**
+ * Writes move on a board and return the changed board
+ */
+fun putMoveOnSBoard(state: State, move: Move): SmallBoard {
+    state.s[getSmallBoardPos(state, move)] = state.s[getSmallBoardPos(state, move)] or (1 shl move.pos)
+    return state.s[getSmallBoardPos(state, move)]
 }
 
-
+/**
+ * Returns a list of viable moves for a given state
+ */
 fun possibleMoves(state: State): List<Move> {
     val nextShortBoard = state.s[20]
     return if (nextShortBoard < 0) {
@@ -100,6 +115,9 @@ fun randomMove(state: State): Move? {
     }
 }
 
+/**
+ * State at game start
+ */
 fun startingState(): State {
     return State(arrayOf(
             0, 0, 0, 0, 0, 0,
@@ -107,6 +125,12 @@ fun startingState(): State {
             0, 0, 0, 0, 0, 0,
             0, 0, -1, 1, 0))
 }
+
+/**
+ * Given a move and a state, plays it on the board, creates a new state and
+ * does all necessary checks for small board victories, draws and so on.
+ * Returns ew state
+ */
 
 fun playMove(move: Move, state: State): State {
     val player = state.s[21]
@@ -128,6 +152,9 @@ fun playMove(move: Move, state: State): State {
     return newState
 }
 
+/**
+ * Same as previous method but doesn't create a new state, instead modifies the current one (for optimisation).
+ */
 
 fun playMoveInPlace(move: Move, state: State) {
     val player = state.s[21]
